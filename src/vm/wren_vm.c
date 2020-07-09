@@ -206,6 +206,11 @@ void* wrenReallocate(WrenVM* vm, void* memory, size_t oldSize, size_t newSize)
          memory, (unsigned long)oldSize, (unsigned long)newSize);
 #endif
 
+  // No need to do anything if the sizes are the same. We check that newSize is
+  // not 0 because calling wrenReallocate(vm, memory, 0, 0) is used to free
+  // memory
+  if (newSize && oldSize == newSize) return memory;
+
   // If new bytes are being allocated, add them to the total count. If objects
   // are being completely deallocated, we don't track that (since we don't
   // track the original size). Instead, that will be handled while marking
