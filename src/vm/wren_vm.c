@@ -199,6 +199,7 @@ void wrenCollectGarbage(WrenVM* vm)
 
 void* wrenReallocate(WrenVM* vm, void* memory, size_t oldSize, size_t newSize)
 {
+    if (oldSize == newSize) return memory;
 #if WREN_DEBUG_TRACE_MEMORY
   // Explicit cast because size_t has different sizes on 32-bit and 64-bit and
   // we need a consistent type for the format string.
