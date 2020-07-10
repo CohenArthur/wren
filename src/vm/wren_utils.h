@@ -70,11 +70,19 @@ DECLARE_BUFFER(String, ObjString*);
 // Default capacity to use when creating the symbol table
 #define WREN_ST_DEFAULT_CAPACITY 64
 
-// Entry into the symbol map. Points to the next element for easy iteration
+// Entry into the symbol map.
 typedef struct Symbol {
+    // Key used to compute the hash value
     char *key;
+
+    // "Symbol" that we want to store
     ObjString *value;
+
+    // Hash value of the symbol
     unsigned long hash;
+
+    // Index to get ordering in the hashmap
+    size_t idx;
 } Symbol;
 
 // SymbolTable implemented using a simple hash table. Entries are [Symbol]s

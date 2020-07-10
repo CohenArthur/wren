@@ -32,6 +32,7 @@ static unsigned long wrenHashDjb2(const char* str)
 
 static Symbol* wrenSymbolInit(char* key,
                               unsigned long hash,
+                              size_t idx,
                               ObjString* value)
 {
     Symbol *new_symbol = calloc(1, sizeof(Symbol));
@@ -39,6 +40,7 @@ static Symbol* wrenSymbolInit(char* key,
     new_symbol->key = key;
     new_symbol->value = value;
     new_symbol->hash = hash;
+    new_symbol->idx = idx;
 
     return new_symbol;
 }
@@ -75,11 +77,11 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
   while (symbols->data[idx]) // Find the nearest free spot
       idx++;
 
-  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, symbol);
+  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, symbols->count - 1, symbol);
 
   wrenPopRoot(vm);
 
-  return idx;
+  return symbols->count - 1;
 }
 
 int wrenSymbolTableEnsure(WrenVM* vm,

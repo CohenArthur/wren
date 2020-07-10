@@ -3493,6 +3493,23 @@ ObjFn* wrenCompile(WrenVM* vm, ObjModule* module, const char* source,
   // See if there are any implicitly declared module-level variables that never
   // got an explicit definition. They will have values that are numbers
   // indicating the line where the variable was first used.
+  for (size_t i = 0; i < parser.module->variableNames.capacity; i++)
+  {
+      Symbol *curr = parser.module->variableNames.data[i];
+      if (curr &&
+          curr->idx >= numExistingVariables &&
+          curr->idx < parser.module->variables.count &&
+          IS_NUM(parser.module->variables.data[curr->idx]))
+      {
+                  // Synthesize a token for the original use site.
+                  parser.previous.type = TOKEN_NAME;
+                  parser.previous.start = curr->value->value;
+                  parser.previous.length = curr->value->length;
+                  parser.previous.line = (int)AS_NUM(parser.module->variables.data[curr->idx]);
+                  error(&compiler, "Variable is used but not defined.");
+      }
+  }
+  /*
   for (int i = numExistingVariables; i < parser.module->variables.count; i++)
   {
     if (IS_NUM(parser.module->variables.data[i]))
@@ -3505,7 +3522,8 @@ ObjFn* wrenCompile(WrenVM* vm, ObjModule* module, const char* source,
       error(&compiler, "Variable is used but not defined.");
     }
   }
-  
+  */
+
   return endCompiler(&compiler, "(script)", 8);
 }
 
