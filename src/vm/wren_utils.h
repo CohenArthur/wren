@@ -74,7 +74,7 @@ DECLARE_BUFFER(String, ObjString*);
 typedef struct Symbol {
     bool set;
     char *key;
-    void *value;
+    ObjString *value;
     unsigned long hash;
 
     struct Symbol *next;

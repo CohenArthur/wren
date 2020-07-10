@@ -19,7 +19,7 @@ void wrenSymbolTableClear(WrenVM* vm, SymbolTable* symbols)
     memset(symbols->entries, 0, symbols->count);
 }
 
-static unsigned long wrenHashDjb2(char* str)
+static unsigned long wrenHashDjb2(const char* str)
 {
     unsigned long hash = 5381; // Magic value to use as starting point
     char c = '\0';
@@ -76,12 +76,13 @@ int wrenSymbolTableEnsure(WrenVM* vm, SymbolTable* symbols,
 int wrenSymbolTableFind(const SymbolTable* symbols,
                         const char* name, size_t length)
 {
-  // See if the symbol is already defined.
-  // TODO: O(n). Do something better.
-  for (int i = 0; i < symbols->count; i++)
-  {
-    if (wrenStringEqualsCString(symbols->data[i], name, length)) return i;
-  }
+  // FIXME: Check to see if name is the computed name or not
+
+  unsigned long hash = wrenHashDjb2(name);
+  size_t idx = hash % symbols->capacity;
+  for (Symbol *curr = &symbols->entries[idx]; curr; curr = curr->next)
+    if (!strcmp(name, curr->key))
+      return idx;
 
   return -1;
 }
@@ -89,12 +90,11 @@ int wrenSymbolTableFind(const SymbolTable* symbols,
 void wrenBlackenSymbolTable(WrenVM* vm, SymbolTable* symbolTable)
 {
   for (int i = 0; i < symbolTable->count; i++)
-  {
-    wrenGrayObj(vm, &symbolTable->data[i]->obj);
-  }
-  
+    if (symbolTable->entries[i].set)
+        wrenGrayObj(vm, &symbolTable->entries[i].value->obj);
+
   // Keep track of how much memory is still in use.
-  vm->bytesAllocated += symbolTable->capacity * sizeof(*symbolTable->data);
+  vm->bytesAllocated += symbolTable->capacity * sizeof(*symbolTable->entries);
 }
 
 int wrenUtf8EncodeNumBytes(int value)
