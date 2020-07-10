@@ -16,12 +16,17 @@ void wrenSymbolTableInit(SymbolTable* symbols)
 
 void wrenSymbolTableClear(WrenVM* vm, SymbolTable* symbols)
 {
-    memset(symbols->data, 0, symbols->count);
+    for (size_t i = 0; i < symbols->capacity; i++)
+    {
+        free(symbols->data[i]);
+        symbols->data[i] = NULL;
+    }
 }
 
 static unsigned long wrenHashDjb2(const char* str)
 {
-    unsigned long hash = 5381; // Magic value to use as starting point
+    // Magic value to use as starting point to the hash function
+    unsigned long hash = 5381;
     char c = '\0';
 
     while ((c = *str++))
@@ -69,6 +74,9 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
 
   wrenPushRoot(vm, &symbol->obj);
 
+  // The relative index is used to associate variables in the SymbolTable
+  size_t relative_index = symbols->count;
+
   symbols->count++;
   if (symbols->count == symbols->capacity)
       wrenSymbolTableGrow(vm, symbols);
@@ -77,11 +85,11 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
   while (symbols->data[idx]) // Find the nearest free spot
       idx++;
 
-  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, symbols->count - 1, symbol);
+  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, relative_index, symbol);
 
   wrenPopRoot(vm);
 
-  return symbols->count - 1;
+  return relative_index;
 }
 
 int wrenSymbolTableEnsure(WrenVM* vm,
@@ -106,7 +114,9 @@ int wrenSymbolTableFind(const SymbolTable* symbols,
   size_t idx = hash % symbols->capacity;
   for (size_t idx = hash % symbols->capacity; idx < symbols->capacity; idx++)
     if (symbols->data[idx] && !strcmp(name, symbols->data[idx]->value->value))
-      return idx;
+      return symbols->data[idx]->idx;
+  // Return the index associated with that value, but not its "true" index
+  // in the hashtable since it doesn't matter
 
   return -1;
 }
