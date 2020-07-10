@@ -43,11 +43,20 @@ static Symbol* wrenSymbolInit(char* key,
     return new_symbol;
 }
 
-static void wrenSymbolTableGrow(SymbolTable* symbols)
+static void wrenSymbolTableGrow(WrenVM *vm, SymbolTable* symbols)
 {
-    // FIXME: Replace data in the table
     symbols->capacity *= 2;
-    symbols->data = realloc(symbols->data, symbols->capacity * sizeof(Symbol *));
+    Symbol **old_data = symbols->data;
+
+    symbols->data = calloc(symbols->capacity, sizeof(Symbol *));
+
+    // Replace the old data with the new one, then free the old one
+    for (size_t i = 0; i < symbols->capacity / 2; i++)
+        if (old_data[i])
+            wrenSymbolTableAdd(vm, symbols, old_data[i]->value->value,
+                               old_data[i]->value->length);
+
+    free(old_data);
 }
 
 int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
@@ -60,7 +69,7 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
 
   symbols->count++;
   if (symbols->count == symbols->capacity)
-      wrenSymbolTableGrow(symbols);
+      wrenSymbolTableGrow(vm, symbols);
 
   size_t idx = hash % symbols->capacity;
   while (symbols->data[idx]) // Find the nearest free spot
@@ -70,18 +79,20 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
 
   wrenPopRoot(vm);
 
-  return symbols->count - 1;
+  return idx;
 }
 
-int wrenSymbolTableEnsure(WrenVM* vm, SymbolTable* symbols,
-                          const char* name, size_t length)
+int wrenSymbolTableEnsure(WrenVM* vm,
+                          SymbolTable* symbols,
+                          const char* name,
+                          size_t length)
 {
-  // See if the symbol is already defined.
-  int existing = wrenSymbolTableFind(symbols, name, length);
-  if (existing != -1) return existing;
+    // See if the symbol is already defined.
+    int existing = wrenSymbolTableFind(symbols, name, length);
+    if (existing != -1) return existing;
 
-  // New symbol, so add it.
-  return wrenSymbolTableAdd(vm, symbols, name, length);
+    // New symbol, so add it.
+    return wrenSymbolTableAdd(vm, symbols, name, length);
 }
 
 int wrenSymbolTableFind(const SymbolTable* symbols,
