@@ -751,12 +751,12 @@ static Value getModuleVariable(WrenVM* vm, ObjModule* module,
                                Value variableName)
 {
   ObjString* variable = AS_STRING(variableName);
-  uint32_t variableEntry = wrenSymbolTableFind(&module->variableNames,
+  int variableEntry = wrenSymbolTableFind(&module->variableNames,
                                                variable->value,
                                                variable->length);
   
   // It's a runtime error if the imported variable does not exist.
-  if (variableEntry != UINT32_MAX)
+  if (variableEntry != -1)
   {
     return module->variables.data[variableEntry];
   }
