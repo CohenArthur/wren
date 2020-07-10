@@ -75,8 +75,6 @@ typedef struct Symbol {
     char *key;
     ObjString *value;
     unsigned long hash;
-
-    struct Symbol *next;
 } Symbol;
 
 // SymbolTable implemented using a simple hash table. Entries are [Symbol]s

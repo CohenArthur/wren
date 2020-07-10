@@ -32,15 +32,13 @@ static unsigned long wrenHashDjb2(const char* str)
 
 static Symbol* wrenSymbolInit(char* key,
                               unsigned long hash,
-                              ObjString* value,
-                              Symbol* next)
+                              ObjString* value)
 {
     Symbol *new_symbol = calloc(1, sizeof(Symbol));
 
     new_symbol->key = key;
     new_symbol->value = value;
     new_symbol->hash = hash;
-    new_symbol->next = next;
 
     return new_symbol;
 }
@@ -49,7 +47,7 @@ static void wrenSymbolTableGrow(SymbolTable* symbols)
 {
     // FIXME: Replace data in the table
     symbols->capacity *= 2;
-    symbols->data = realloc(symbols->data, symbols->capacity);
+    symbols->data = realloc(symbols->data, symbols->capacity * sizeof(Symbol *));
 }
 
 int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
@@ -65,7 +63,10 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
       wrenSymbolTableGrow(symbols);
 
   size_t idx = hash % symbols->capacity;
-  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, symbol, symbols->data[idx]);
+  while (symbols->data[idx]) // Find the nearest free spot
+      idx++;
+
+  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, symbol);
 
   wrenPopRoot(vm);
 
@@ -90,8 +91,8 @@ int wrenSymbolTableFind(const SymbolTable* symbols,
 
   unsigned long hash = wrenHashDjb2(name);
   size_t idx = hash % symbols->capacity;
-  for (Symbol *curr = symbols->data[idx]; curr; curr = curr->next)
-    if (!strcmp(name, curr->key))
+  for (size_t idx = hash % symbols->capacity; idx < symbols->capacity; idx++)
+    if (symbols->data[idx] && !strcmp(name, symbols->data[idx]->value->value))
       return idx;
 
   return -1;
