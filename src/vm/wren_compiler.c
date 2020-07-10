@@ -3499,8 +3499,8 @@ ObjFn* wrenCompile(WrenVM* vm, ObjModule* module, const char* source,
     {
       // Synthesize a token for the original use site.
       parser.previous.type = TOKEN_NAME;
-      parser.previous.start = parser.module->variableNames.data[i].value->value;
-      parser.previous.length = parser.module->variableNames.data[i].value->length;
+      parser.previous.start = parser.module->variableNames.data[i]->value->value;
+      parser.previous.length = parser.module->variableNames.data[i]->value->length;
       parser.previous.line = (int)AS_NUM(parser.module->variables.data[i]);
       error(&compiler, "Variable is used but not defined.");
     }

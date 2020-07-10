@@ -11,7 +11,7 @@ void wrenSymbolTableInit(SymbolTable* symbols)
 {
     symbols->count = 0;
     symbols->capacity = WREN_ST_DEFAULT_CAPACITY;
-    symbols->data = calloc(WREN_ST_DEFAULT_CAPACITY, sizeof(Symbol));
+    symbols->data = calloc(WREN_ST_DEFAULT_CAPACITY, sizeof(Symbol *));
 }
 
 void wrenSymbolTableClear(WrenVM* vm, SymbolTable* symbols)
@@ -28,6 +28,21 @@ static unsigned long wrenHashDjb2(const char* str)
         hash = ((hash << 5) + hash) + c;
 
     return hash;
+}
+
+static Symbol* wrenSymbolInit(char* key,
+                              unsigned long hash,
+                              ObjString* value,
+                              Symbol* next)
+{
+    Symbol *new_symbol = calloc(1, sizeof(Symbol));
+
+    new_symbol->key = key;
+    new_symbol->value = value;
+    new_symbol->hash = hash;
+    new_symbol->next = next;
+
+    return new_symbol;
 }
 
 static void wrenSymbolTableGrow(SymbolTable* symbols)
@@ -49,13 +64,8 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
   if (symbols->count == symbols->capacity)
       wrenSymbolTableGrow(symbols);
 
-  // FIXME: Refactor in its own function ?
   size_t idx = hash % symbols->capacity;
-  symbols->data[idx].next = &symbols->data[idx];
-  symbols->data[idx].set = true;
-  symbols->data[idx].hash = hash;
-  symbols->data[idx].value = symbol;
-  symbols->data[idx].key = symbol->value;
+  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, symbol, symbols->data[idx]);
 
   wrenPopRoot(vm);
 
@@ -80,7 +90,7 @@ int wrenSymbolTableFind(const SymbolTable* symbols,
 
   unsigned long hash = wrenHashDjb2(name);
   size_t idx = hash % symbols->capacity;
-  for (Symbol *curr = &symbols->data[idx]; curr; curr = curr->next)
+  for (Symbol *curr = symbols->data[idx]; curr; curr = curr->next)
     if (!strcmp(name, curr->key))
       return idx;
 
@@ -90,8 +100,8 @@ int wrenSymbolTableFind(const SymbolTable* symbols,
 void wrenBlackenSymbolTable(WrenVM* vm, SymbolTable* symbolTable)
 {
   for (int i = 0; i < symbolTable->count; i++)
-    if (symbolTable->data[i].set)
-        wrenGrayObj(vm, &symbolTable->data[i].value->obj);
+    if (symbolTable->data[i])
+        wrenGrayObj(vm, &symbolTable->data[i]->value->obj);
 
   // Keep track of how much memory is still in use.
   vm->bytesAllocated += symbolTable->capacity * sizeof(*symbolTable->data);

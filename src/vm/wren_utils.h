@@ -72,7 +72,6 @@ DECLARE_BUFFER(String, ObjString*);
 
 // Entry into the symbol map. Points to the next element for easy iteration
 typedef struct Symbol {
-    bool set;
     char *key;
     ObjString *value;
     unsigned long hash;
@@ -86,7 +85,7 @@ typedef struct SymbolTable {
     size_t count;
     size_t capacity;
 
-    Symbol *data;
+    Symbol **data;
 } SymbolTable;
 
 // Initializes the symbol table.
