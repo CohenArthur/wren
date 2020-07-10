@@ -67,8 +67,22 @@ DECLARE_BUFFER(Byte, uint8_t);
 DECLARE_BUFFER(Int, int);
 DECLARE_BUFFER(String, ObjString*);
 
+// Entry into the symbol map. Points to the next element for easy iteration
+typedef struct Symbol {
+    char *key;
+    void *value;
+    unsigned long hash;
+
+    struct Symbol *next;
+} Symbol;
+
 // TODO: Change this to use a map.
-typedef StringBuffer SymbolTable;
+typedef struct SymbolTable {
+    size_t count;
+    size_t capacity;
+
+    Symbol **entries;
+} SymbolTable;
 
 // Initializes the symbol table.
 void wrenSymbolTableInit(SymbolTable* symbols);
