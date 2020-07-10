@@ -81,12 +81,12 @@ typedef struct Symbol {
 } Symbol;
 
 // SymbolTable implemented using a simple hash table. Entries are [Symbol]s
-// and are contained in the `entries` field
+// and are contained in the `data` field
 typedef struct SymbolTable {
     size_t count;
     size_t capacity;
 
-    Symbol *entries;
+    Symbol *data;
 } SymbolTable;
 
 // Initializes the symbol table.
