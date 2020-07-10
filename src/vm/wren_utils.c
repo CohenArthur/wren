@@ -9,23 +9,56 @@ DEFINE_BUFFER(String, ObjString*);
 
 void wrenSymbolTableInit(SymbolTable* symbols)
 {
-  wrenStringBufferInit(symbols);
+    symbols->count = 0;
+    symbols->capacity = WREN_ST_DEFAULT_CAPACITY;
+    symbols->entries = calloc(WREN_ST_DEFAULT_CAPACITY, sizeof(Symbol));
 }
 
 void wrenSymbolTableClear(WrenVM* vm, SymbolTable* symbols)
 {
-  wrenStringBufferClear(vm, symbols);
+    memset(symbols->entries, 0, symbols->count);
+}
+
+static unsigned long wrenHashDjb2(char* str)
+{
+    unsigned long hash = 5381; // Magic value to use as starting point
+    char c = '\0';
+
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c;
+
+    return hash;
+}
+
+static void wrenSymbolTableGrow(SymbolTable* symbols)
+{
+    // FIXME: Replace entries in the table
+    symbols->capacity *= 2;
+    symbols->entries = realloc(symbols->entries, symbols->capacity);
 }
 
 int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
                        const char* name, size_t length)
 {
   ObjString* symbol = AS_STRING(wrenNewStringLength(vm, name, length));
-  
+  unsigned long hash = wrenHashDjb2(symbol->value);
+
   wrenPushRoot(vm, &symbol->obj);
-  wrenStringBufferWrite(vm, symbols, symbol);
+
+  symbols->count++;
+  if (symbols->count == symbols->capacity)
+      wrenSymbolTableGrow(symbols);
+
+  // FIXME: Refactor in its own function ?
+  size_t idx = hash % symbols->capacity;
+  symbols->entries[idx].next = &symbols->entries[idx];
+  symbols->entries[idx].set = true;
+  symbols->entries[idx].hash = hash;
+  symbols->entries[idx].value = symbol;
+  symbols->entries[idx].key = symbol->value;
+
   wrenPopRoot(vm);
-  
+
   return symbols->count - 1;
 }
 

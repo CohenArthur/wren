@@ -67,8 +67,12 @@ DECLARE_BUFFER(Byte, uint8_t);
 DECLARE_BUFFER(Int, int);
 DECLARE_BUFFER(String, ObjString*);
 
+// Default capacity to use when creating the symbol table
+#define WREN_ST_DEFAULT_CAPACITY 64
+
 // Entry into the symbol map. Points to the next element for easy iteration
 typedef struct Symbol {
+    bool set;
     char *key;
     void *value;
     unsigned long hash;
@@ -76,12 +80,13 @@ typedef struct Symbol {
     struct Symbol *next;
 } Symbol;
 
-// TODO: Change this to use a map.
+// SymbolTable implemented using a simple hash table. Entries are [Symbol]s
+// and are contained in the `entries` field
 typedef struct SymbolTable {
     size_t count;
     size_t capacity;
 
-    Symbol **entries;
+    Symbol *entries;
 } SymbolTable;
 
 // Initializes the symbol table.
