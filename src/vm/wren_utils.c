@@ -22,16 +22,10 @@ void wrenSymbolTableClear(WrenVM* vm, SymbolTable* symbols)
 static unsigned long wrenHashDjb2(const char* str)
 {
     unsigned long hash = 5381; // Magic value to use as starting point
-    unsigned long c = 0;
+    char c = '\0';
 
-    while ((c = *(unsigned long *)(str++)))
-    {
-        unsigned char *f = (unsigned char *) c;
-        hash = ((hash << 5) + hash) + f[0];
-        hash = ((hash << 5) + hash) + f[1];
-        hash = ((hash << 5) + hash) + f[2];
-        hash = ((hash << 5) + hash) + f[3];
-    }
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c;
 
     return hash;
 }
