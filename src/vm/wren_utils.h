@@ -71,7 +71,7 @@ DECLARE_BUFFER(String, ObjString*);
 #define WREN_ST_DEFAULT_CAPACITY 64
 
 // Entry into the symbol map.
-typedef struct Symbol {
+typedef struct {
     // Key used to compute the hash value
     char *key;
 
@@ -87,7 +87,7 @@ typedef struct Symbol {
 
 // SymbolTable implemented using a simple hash table. Entries are [Symbol]s
 // and are contained in the `data` field
-typedef struct SymbolTable {
+typedef struct {
     size_t count;
     size_t capacity;
 
