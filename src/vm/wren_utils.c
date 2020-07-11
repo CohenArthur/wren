@@ -40,30 +40,30 @@ static Symbol* wrenSymbolInit(char* key,
                               size_t idx,
                               ObjString* value)
 {
-    Symbol *new_symbol = calloc(1, sizeof(Symbol));
+    Symbol *newSymbol = calloc(1, sizeof(Symbol));
 
-    new_symbol->key = key;
-    new_symbol->value = value;
-    new_symbol->hash = hash;
-    new_symbol->idx = idx;
+    newSymbol->key = key;
+    newSymbol->value = value;
+    newSymbol->hash = hash;
+    newSymbol->idx = idx;
 
-    return new_symbol;
+    return newSymbol;
 }
 
 static void wrenSymbolTableGrow(WrenVM *vm, SymbolTable* symbols)
 {
     symbols->capacity *= 2;
-    Symbol **old_data = symbols->data;
+    Symbol **oldData = symbols->data;
 
     symbols->data = calloc(symbols->capacity, sizeof(Symbol *));
 
     // Replace the old data with the new one, then free the old one
     for (size_t i = 0; i < symbols->capacity / 2; i++)
-        if (old_data[i])
-            wrenSymbolTableAdd(vm, symbols, old_data[i]->value->value,
-                               old_data[i]->value->length);
+        if (oldData[i])
+            wrenSymbolTableAdd(vm, symbols, oldData[i]->value->value,
+                               oldData[i]->value->length);
 
-    free(old_data);
+    free(oldData);
 }
 
 int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
@@ -75,7 +75,7 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
   wrenPushRoot(vm, &symbol->obj);
 
   // The relative index is used to associate variables in the SymbolTable
-  size_t relative_index = symbols->count;
+  size_t relativeIndex = symbols->count;
 
   symbols->count++;
   if (symbols->count == symbols->capacity)
@@ -85,11 +85,11 @@ int wrenSymbolTableAdd(WrenVM* vm, SymbolTable* symbols,
   while (symbols->data[idx]) // Find the nearest free spot
       idx++;
 
-  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, relative_index, symbol);
+  symbols->data[idx] = wrenSymbolInit(symbol->value, hash, relativeIndex, symbol);
 
   wrenPopRoot(vm);
 
-  return relative_index;
+  return relativeIndex;
 }
 
 int wrenSymbolTableEnsure(WrenVM* vm,
