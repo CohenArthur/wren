@@ -24,9 +24,6 @@ typedef struct {
     JitFunction **data;
 } JitMap;
 
-// Global Jit compiler instance // FIXME: Do a proper singleton
-static JitMap *jitInstance;
-
 // Initializes a new JitMap
 void wrenJitMapInit(JitMap *jit);
 
