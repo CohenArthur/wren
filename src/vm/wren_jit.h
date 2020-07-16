@@ -3,21 +3,25 @@
 
 #include <stdlib.h>
 
-// A JitModule is a structure contained in the instance of the Jit compiler.
-// It contains the stored module // FIXME: and what else ?
-typedef struct JitModule {
+#include "wren_value.h"
 
-    // Pointer to the next module in case of hash collision
-    struct JitModule *next;
-} JitModule;
+// A JitFunction is a structure contained in the instance of the Jit compiler.
+// It contains the stored function // FIXME: and what else ?
+typedef struct JitFunction {
+    // The contained function
+    ObjFn *fn;
 
-// The JitMap contains a map of the modules and a way to search for them
-// quickly. You can add modules to that map and search for them
+    // Pointer to the next function in case of hash collision
+    struct JitFunction *next;
+} JitFunction;
+
+// The JitMap contains a map of the functions and a way to search for them
+// quickly. You can add functions to that map and search for them
 typedef struct {
     size_t size;
     size_t capacity;
 
-    JitModule **data;
+    JitFunction **data;
 } JitMap;
 
 // Global Jit compiler instance // FIXME: Do a proper singleton
@@ -26,10 +30,10 @@ static JitMap *jitInstance;
 // Initializes a new JitMap
 void wrenJitMapInit(JitMap *jit);
 
-// Fetch a module from the JitMap
-JitModule *wrenJitMapGet(JitMap *jit); // FIXME: Send back proper type
+// Fetch a function from the JitMap
+JitFunction *wrenJitMapGet(JitMap *jit); // FIXME: Send back proper type
 
-// Add a new module to the JitMap
+// Add a new function to the JitMap
 int wrenJitMapInsert(JitMap *jit);
 
 // Frees the memory used by the JitMap
