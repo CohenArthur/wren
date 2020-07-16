@@ -21,6 +21,8 @@ typedef struct {
     size_t size;
     size_t capacity;
 
+    // FIXME: Use contiguous data for cache optimization, so
+    // JitFunction *data;
     JitFunction **data;
 } JitMap;
 
@@ -28,10 +30,10 @@ typedef struct {
 void wrenJitMapInit(JitMap *jit);
 
 // Fetch a function from the JitMap
-JitFunction *wrenJitMapGet(JitMap *jit); // FIXME: Send back proper type
+ObjFn *wrenJitMapGet(JitMap *jit); // FIXME: Send back proper type
 
 // Add a new function to the JitMap
-int wrenJitMapInsert(JitMap *jit);
+int wrenJitMapInsert(JitMap *jit, ObjFn *fn);
 
 // Frees the memory used by the JitMap
 void wrenJitMapClear(JitMap *jit);
