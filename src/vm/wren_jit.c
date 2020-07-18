@@ -9,23 +9,36 @@ void wrenJitMapInit(WrenVM *vm, JitMap *jit)
     jit->data = calloc(WREN_JIT_DEFAULT_CAPACITY, sizeof(JitFunction*));
 }
 
-static unsigned long wrenHashDjb2(const char *key)
+static unsigned long wrenHashDjb2(const char *key, size_t length)
 {
     unsigned long hash = 5381; // Magic starting point
-    char c = '\0';
 
-    while ((c = *key++))
-        hash = ((hash << 5) + hash) + c;
+    for (size_t i = 0; i < length; i++)
+        hash = ((hash << 5) + hash) + key[i];
 
     return hash;
 }
 
-ObjClosure *wrenJitMapGet(JitMap *jit, char *functionName)
+// Populate a char buffer with a unique representation of a function
+static void objFnToString(char strBuffer[], ObjFn *fn)
 {
-    size_t hashIdx = wrenHashDjb2(functionName) % jit->capacity;
+    memcpy(strBuffer, fn, sizeof(ObjFn));
+}
+
+static int objFnCmp(const ObjFn *lhs, const ObjFn *rhs)
+{
+    return memcmp(lhs, rhs, sizeof(ObjFn));
+}
+
+ObjClosure *wrenJitMapGet(JitMap *jit, ObjFn *fn)
+{
+    char fnName[sizeof(ObjFn)];
+    objFnToString(fnName, fn);
+
+    size_t hashIdx = wrenHashDjb2(fnName, sizeof(ObjFn)) % jit->capacity;
 
     for (JitFunction *curr = jit->data[hashIdx]; curr; curr = curr->next)
-        if (!strcmp(functionName, curr->closure->fn->debug->name))
+        if (!objFnCmp(curr->closure->fn, fn))
             return curr->closure;
 
     return NULL;
@@ -44,10 +57,13 @@ static JitFunction *wrenJitFunctionInit(WrenVM *vm, ObjClosure *closure, JitFunc
 int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjClosure *closure)
 {
     // Check if the value has already been inserted
-    if (wrenJitMapGet(jit, closure->fn->debug->name))
+    if (wrenJitMapGet(jit, closure->fn))
         return -1;
 
-    size_t idx = wrenHashDjb2(closure->fn->debug->name) % jit->capacity;
+    char fnName[sizeof(ObjFn)];
+    objFnToString(fnName, closure->fn);
+
+    size_t idx = wrenHashDjb2(fnName, sizeof(ObjFn)) % jit->capacity;
 
     jit->data[idx] = wrenJitFunctionInit(vm, closure, jit->data[idx]);
 

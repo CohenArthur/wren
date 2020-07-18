@@ -135,8 +135,12 @@ ObjClosure* wrenNewClosure(WrenVM* vm, ObjFn* fn)
 {
     ObjClosure *closure;
     // If the closure has already been encountered, return it
-    if ((closure = wrenJitMapGet(&vm->jit, fn->debug->name)))
-        return closure;
+    if ((closure = wrenJitMapGet(&vm->jit, fn)))
+    {
+        ObjClosure *copy = ALLOCATE_FLEX(vm, ObjClosure, ObjUpvalue*, fn->numUpvalues); // FIXME: Avoid copying ?
+        memcpy(copy, closure, sizeof(ObjClosure) + fn->numUpvalues);
+        return copy;
+    }
 
     closure = ALLOCATE_FLEX(vm, ObjClosure,
             ObjUpvalue*, fn->numUpvalues);

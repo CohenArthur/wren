@@ -34,7 +34,7 @@ typedef struct {
 void wrenJitMapInit(WrenVM *vm, JitMap *jit);
 
 // Fetch a function from the JitMap
-ObjClosure *wrenJitMapGet(JitMap *jit, char *functionName);
+ObjClosure *wrenJitMapGet(JitMap *jit, ObjFn *fn);
 
 // Add a new function to the JitMap
 int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjClosure *closure);
