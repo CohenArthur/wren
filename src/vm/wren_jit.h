@@ -26,16 +26,19 @@ typedef struct {
     JitFunction **data;
 } JitMap;
 
+// Fetch the global JIT instance
+JitMap *wrenJitMapInstance(WrenVM *vm);
+
 // Initializes a new JitMap
-void wrenJitMapInit(JitMap *jit);
+void wrenJitMapInit(WrenVM *vm, JitMap *jit);
 
 // Fetch a function from the JitMap
-ObjFn *wrenJitMapGet(JitMap *jit); // FIXME: Send back proper type
+ObjFn *wrenJitMapGet(JitMap *jit, char *functionName);
 
 // Add a new function to the JitMap
-int wrenJitMapInsert(JitMap *jit, ObjFn *fn);
+int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjFn *fn);
 
 // Frees the memory used by the JitMap
-void wrenJitMapClear(JitMap *jit);
+void wrenJitMapClear(WrenVM *vm, JitMap *jit);
 
 #endif // wren_jit_h

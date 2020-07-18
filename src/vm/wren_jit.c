@@ -1,54 +1,54 @@
 #include "wren_jit.h"
+#include "wren_vm.h"
 
 #define WREN_JIT_DEFAULT_CAPACITY 64
 
 static JitMap *jitInstance = NULL;
 
-static JitMap *wrenJitMapInstance()
+JitMap *wrenJitMapInstance(WrenVM *vm)
 {
     if (!jitInstance)
     {
         jitInstance = malloc(sizeof(JitMap));
 
-        wrenJitMapInit(jitInstance);
+        wrenJitMapInit(vm, jitInstance);
     }
 
     return jitInstance;
 }
 
-void wrenJitMapInit(JitMap *jit)
+void wrenJitMapInit(WrenVM *vm, JitMap *jit)
 {
     jit->size = 0;
     jit->capacity = WREN_JIT_DEFAULT_CAPACITY;
     jit->data = calloc(WREN_JIT_DEFAULT_CAPACITY, sizeof(JitFunction*));
 }
 
-static void objFnToString(char* buffer, ObjFn* fn)
-{
-    // Byte-copy of the ObjFn to a char buffer
-    memcpy(buffer, fn, sizeof(ObjFn));
-}
-
-static int objFnCmp(ObjFn *lhs, ObjFn *rhs)
-{
-    return memcmp(lhs, rhs, sizeof(ObjFn));
-}
-
-static unsigned long wrenHashDjb2(const char *key, size_t length)
+static unsigned long wrenHashDjb2(const char *key)
 {
     unsigned long hash = 5381; // Magic starting point
+    char c = '\0';
 
-    for (size_t i = 0; i < length; i++)
-        hash = ((hash << 5) + hash) + key[i];
+    while ((c = *key++))
+        hash = ((hash << 5) + hash) + c;
 
     return hash;
 }
 
-ObjFn *wrenJitMapGet(JitMap *jit);
-
-static JitFunction *wrenJitFunctionInit(ObjFn *fn, JitFunction *next)
+ObjFn *wrenJitMapGet(JitMap *jit, char *functionName)
 {
-    JitFunction *newFn = malloc(sizeof(JitFunction));
+    size_t hashIdx = wrenHashDjb2(functionName) % jit->capacity;
+
+    for (JitFunction *curr = jit->data[hashIdx]; curr; curr = curr->next)
+        if (!strcmp(functionName, curr->fn->debug->name))
+            return curr->fn;
+
+    return NULL;
+}
+
+static JitFunction *wrenJitFunctionInit(WrenVM *vm, ObjFn *fn, JitFunction *next)
+{
+    JitFunction *newFn = wrenReallocate(vm, NULL, 0, sizeof(JitFunction));
 
     newFn->fn = fn;
     newFn->next = next;
@@ -56,21 +56,22 @@ static JitFunction *wrenJitFunctionInit(ObjFn *fn, JitFunction *next)
     return newFn;
 }
 
-int wrenJitMapInsert(JitMap *jit, ObjFn *fn)
+int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjFn *fn)
 {
+    // Check if the value has already been inserted
+    if (wrenJitMapGet(jit, fn->debug->name))
+        return -1;
+
     // FIXME: Only insert when necessary
 
-    char fnRepr[sizeof(ObjFn)];
-    objFnToString(fnRepr, fn);
+    size_t idx = wrenHashDjb2(fn->debug->name) % jit->capacity;
 
-    size_t idx = wrenHashDjb2(fnRepr, sizeof(ObjFn)) % jit->capacity;
-
-    jit->data[idx] = wrenJitFunctionInit(fn, jit->data[idx]);
+    jit->data[idx] = wrenJitFunctionInit(vm, fn, jit->data[idx]);
 
     return 0;
 }
 
-void wrenJitMapClear(JitMap *jit)
+void wrenJitMapClear(WrenVM *vm, JitMap *jit)
 {
     jit->size = 0;
 }
