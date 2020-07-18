@@ -6,6 +6,7 @@
 #include "wren.h"
 #include "wren_value.h"
 #include "wren_vm.h"
+#include "wren_jit.h"
 
 #if WREN_DEBUG_TRACE_MEMORY
   #include "wren_debug.h"
@@ -132,17 +133,25 @@ void wrenBindMethod(WrenVM* vm, ObjClass* classObj, int symbol, Method method)
 
 ObjClosure* wrenNewClosure(WrenVM* vm, ObjFn* fn)
 {
-  ObjClosure* closure = ALLOCATE_FLEX(vm, ObjClosure,
-                                      ObjUpvalue*, fn->numUpvalues);
-  initObj(vm, &closure->obj, OBJ_CLOSURE, vm->fnClass);
+    ObjClosure *closure;
+    // If the closure has already been encountered, return it
+    if ((closure = wrenJitMapGet(wrenJitMapInstance(vm), fn->debug->name)))
+        return closure;
 
-  closure->fn = fn;
+    closure = ALLOCATE_FLEX(vm, ObjClosure,
+            ObjUpvalue*, fn->numUpvalues);
+    initObj(vm, &closure->obj, OBJ_CLOSURE, vm->fnClass);
 
-  // Clear the upvalue array. We need to do this in case a GC is triggered
-  // after the closure is created but before the upvalue array is populated.
-  for (int i = 0; i < fn->numUpvalues; i++) closure->upvalues[i] = NULL;
+    closure->fn = fn;
 
-  return closure;
+    // Clear the upvalue array. We need to do this in case a GC is triggered
+    // after the closure is created but before the upvalue array is populated.
+    for (int i = 0; i < fn->numUpvalues; i++) closure->upvalues[i] = NULL;
+
+    // Insert the new closure in the JIT so we can look it up
+    wrenJitMapInsert(vm, wrenJitMapInstance(vm), closure);
+
+    return closure;
 }
 
 ObjFiber* wrenNewFiber(WrenVM* vm, ObjClosure* closure)
