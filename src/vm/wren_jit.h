@@ -9,7 +9,7 @@
 // It contains the stored function // FIXME: and what else ?
 typedef struct JitFunction {
     // The contained function
-    ObjFn *fn;
+    ObjClosure *closure;
 
     // Pointer to the next function in case of hash collision
     struct JitFunction *next;
@@ -23,6 +23,7 @@ typedef struct {
 
     // FIXME: Use contiguous data for cache optimization, so
     // JitFunction *data;
+    // But that would make insertion slower. Weigh both sides
     JitFunction **data;
 } JitMap;
 
@@ -33,10 +34,10 @@ JitMap *wrenJitMapInstance(WrenVM *vm);
 void wrenJitMapInit(WrenVM *vm, JitMap *jit);
 
 // Fetch a function from the JitMap
-ObjFn *wrenJitMapGet(JitMap *jit, char *functionName);
+ObjClosure *wrenJitMapGet(JitMap *jit, char *functionName);
 
 // Add a new function to the JitMap
-int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjFn *fn);
+int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjClosure *closure);
 
 // Frees the memory used by the JitMap
 void wrenJitMapClear(WrenVM *vm, JitMap *jit);

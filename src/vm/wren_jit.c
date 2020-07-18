@@ -10,7 +10,7 @@ JitMap *wrenJitMapInstance(WrenVM *vm)
 {
     if (!jitInstance)
     {
-        jitInstance = malloc(sizeof(JitMap));
+        jitInstance = ALLOCATE(vm, JitMap);
 
         wrenJitMapInit(vm, jitInstance);
     }
@@ -36,38 +36,36 @@ static unsigned long wrenHashDjb2(const char *key)
     return hash;
 }
 
-ObjFn *wrenJitMapGet(JitMap *jit, char *functionName)
+ObjClosure *wrenJitMapGet(JitMap *jit, char *functionName)
 {
     size_t hashIdx = wrenHashDjb2(functionName) % jit->capacity;
 
     for (JitFunction *curr = jit->data[hashIdx]; curr; curr = curr->next)
-        if (!strcmp(functionName, curr->fn->debug->name))
-            return curr->fn;
+        if (!strcmp(functionName, curr->closure->fn->debug->name))
+            return curr->closure;
 
     return NULL;
 }
 
-static JitFunction *wrenJitFunctionInit(WrenVM *vm, ObjFn *fn, JitFunction *next)
+static JitFunction *wrenJitFunctionInit(WrenVM *vm, ObjClosure *closure, JitFunction *next)
 {
     JitFunction *newFn = ALLOCATE(vm, JitFunction);
 
-    newFn->fn = fn;
+    newFn->closure = closure;
     newFn->next = next;
 
     return newFn;
 }
 
-int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjFn *fn)
+int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjClosure *closure)
 {
     // Check if the value has already been inserted
-    if (wrenJitMapGet(jit, fn->debug->name))
+    if (wrenJitMapGet(jit, closure->fn->debug->name))
         return -1;
 
-    // FIXME: Only insert when necessary
+    size_t idx = wrenHashDjb2(closure->fn->debug->name) % jit->capacity;
 
-    size_t idx = wrenHashDjb2(fn->debug->name) % jit->capacity;
-
-    jit->data[idx] = wrenJitFunctionInit(vm, fn, jit->data[idx]);
+    jit->data[idx] = wrenJitFunctionInit(vm, closure, jit->data[idx]);
 
     return 0;
 }
