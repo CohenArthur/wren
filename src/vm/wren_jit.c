@@ -1,5 +1,6 @@
 #include "wren_jit.h"
 #include "wren_vm.h"
+#include "wren_common.h"
 
 #define WREN_JIT_DEFAULT_CAPACITY 64
 
@@ -48,7 +49,7 @@ ObjFn *wrenJitMapGet(JitMap *jit, char *functionName)
 
 static JitFunction *wrenJitFunctionInit(WrenVM *vm, ObjFn *fn, JitFunction *next)
 {
-    JitFunction *newFn = wrenReallocate(vm, NULL, 0, sizeof(JitFunction));
+    JitFunction *newFn = ALLOCATE(vm, JitFunction);
 
     newFn->fn = fn;
     newFn->next = next;
@@ -73,5 +74,6 @@ int wrenJitMapInsert(WrenVM *vm, JitMap *jit, ObjFn *fn)
 
 void wrenJitMapClear(WrenVM *vm, JitMap *jit)
 {
+    DEALLOCATE(vm, jit->data);
     jit->size = 0;
 }
