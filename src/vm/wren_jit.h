@@ -5,6 +5,9 @@
 
 #include "wren_value.h"
 
+// Default amount of Closures that the JIT can store
+#define WREN_JIT_DEFAULT_CAPACITY 64
+
 // A JitFunction is a structure contained in the instance of the Jit compiler.
 // It contains the stored function // FIXME: and what else ?
 typedef struct JitFunction {
@@ -26,9 +29,6 @@ typedef struct {
     // But that would make insertion slower. Weigh both sides
     JitFunction **data;
 } JitMap;
-
-// Fetch the global JIT instance
-JitMap *wrenJitMapInstance(WrenVM *vm);
 
 // Initializes a new JitMap
 void wrenJitMapInit(WrenVM *vm, JitMap *jit);

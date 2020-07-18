@@ -2,22 +2,6 @@
 #include "wren_vm.h"
 #include "wren_common.h"
 
-#define WREN_JIT_DEFAULT_CAPACITY 64
-
-static JitMap *jitInstance = NULL;
-
-JitMap *wrenJitMapInstance(WrenVM *vm)
-{
-    if (!jitInstance)
-    {
-        jitInstance = ALLOCATE(vm, JitMap);
-
-        wrenJitMapInit(vm, jitInstance);
-    }
-
-    return jitInstance;
-}
-
 void wrenJitMapInit(WrenVM *vm, JitMap *jit)
 {
     jit->size = 0;

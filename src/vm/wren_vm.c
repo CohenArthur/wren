@@ -77,6 +77,7 @@ WrenVM* wrenNewVM(WrenConfiguration* config)
   vm->nextGC = vm->config.initialHeapSize;
 
   wrenSymbolTableInit(&vm->methodNames);
+  wrenJitMapInit(vm, &vm->jit);
 
   vm->modules = wrenNewMap(vm);
   wrenInitializeCore(vm);
@@ -107,6 +108,8 @@ void wrenFreeVM(WrenVM* vm)
   wrenSymbolTableClear(vm, &vm->methodNames);
 
   DEALLOCATE(vm, vm);
+
+  wrenJitMapClear(vm, &vm->jit);
 }
 
 void wrenCollectGarbage(WrenVM* vm)

@@ -135,7 +135,7 @@ ObjClosure* wrenNewClosure(WrenVM* vm, ObjFn* fn)
 {
     ObjClosure *closure;
     // If the closure has already been encountered, return it
-    if ((closure = wrenJitMapGet(wrenJitMapInstance(vm), fn->debug->name)))
+    if ((closure = wrenJitMapGet(&vm->jit, fn->debug->name)))
         return closure;
 
     closure = ALLOCATE_FLEX(vm, ObjClosure,
@@ -149,7 +149,7 @@ ObjClosure* wrenNewClosure(WrenVM* vm, ObjFn* fn)
     for (int i = 0; i < fn->numUpvalues; i++) closure->upvalues[i] = NULL;
 
     // Insert the new closure in the JIT so we can look it up
-    wrenJitMapInsert(vm, wrenJitMapInstance(vm), closure);
+    wrenJitMapInsert(vm, &vm->jit, closure);
 
     return closure;
 }

@@ -5,6 +5,7 @@
 #include "wren_compiler.h"
 #include "wren_value.h"
 #include "wren_utils.h"
+#include "wren_jit.h"
 
 // The maximum number of temporary objects that can be made visible to the GC
 // at one time.
@@ -111,6 +112,10 @@ struct WrenVM
   // There is a single global symbol table for all method names on all classes.
   // Method calls are dispatched directly by index in this table.
   SymbolTable methodNames;
+
+  // Global JIT instance. The JIT keeps track of hot closures and speeds up
+  // the interpretation
+  JitMap jit;
 };
 
 // A generic allocation function that handles all explicit memory management.
